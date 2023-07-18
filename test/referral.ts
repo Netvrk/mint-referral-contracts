@@ -55,7 +55,7 @@ describe("NFT Referral", function () {
 
   describe("Provide minter role and add allowance", async function () {
     it("Shouldn't mint", async function () {
-      await expect(referralContract.referralMint(userAddress, ethers.utils.parseEther("100").toString(), [user2Address], [1], [1])).to.be.reverted;
+      await expect(referralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress)).to.be.reverted;
     });
 
     it("Provide minter role", async function () {
@@ -89,7 +89,7 @@ describe("NFT Referral", function () {
     });
 
     it("Test referral with valid referer", async function () {
-      await referralContract.referralMint(userAddress, ethers.utils.parseEther("100").toString(), [user2Address], [1], [1]);
+      await referralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress);
     });
 
     it("After Referral Mint:Check user balance", async function () {
@@ -99,9 +99,9 @@ describe("NFT Referral", function () {
     });
 
     it("Test referral with invalid referer", async function () {
-      await expect(
-        referralContract.referralMint(ownerAddress, ethers.utils.parseEther("100").toString(), [userAddress], [1], [1])
-      ).to.be.revertedWith("INVALID_REFERER");
+      await expect(referralContract.referralMint(userAddress, 1, 1, ethers.utils.parseEther("100").toString(), ownerAddress)).to.be.revertedWith(
+        "INVALID_REFERER"
+      );
     });
   });
 

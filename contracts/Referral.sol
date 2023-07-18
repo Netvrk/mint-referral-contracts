@@ -35,15 +35,13 @@ contract Referral is AccessControl, ReentrancyGuard {
 
     // Referral mint
     function referralMint(
-        address referer,
+        address recipient,
+        uint256 tierId,
+        uint256 tierSize,
         uint256 cost,
-        address[] memory recipients,
-        uint256[] memory tierIds,
-        uint256[] memory tierSizes
+        address referer
     ) external virtual nonReentrant {
-        require(recipients.length == tierIds.length, "INVALID_INPUT");
-        require(recipients.length == tierSizes.length, "INVALID_INPUT");
-        require(cost == _price, "INVALID_PRICE");
+        require(cost == _price * tierSize, "INVALID_PRICE");
         require(referer != address(0), "INVALID_REFERER");
         require(
             _nftContract.hasRole(MINTER_ROLE, address(this)),
@@ -64,6 +62,15 @@ contract Referral is AccessControl, ReentrancyGuard {
         IERC20(_paymentToken).transferFrom(msg.sender, referer, referralTake);
 
         // Mint NFT
+        address[] memory recipients = new address[](1);
+        recipients[0] = recipient;
+
+        uint256[] memory tierIds = new uint256[](1);
+        tierIds[0] = tierId;
+
+        uint256[] memory tierSizes = new uint256[](1);
+        tierSizes[0] = tierSize;
+
         _nftContract.bulkMint(recipients, tierIds, tierSizes);
     }
 
