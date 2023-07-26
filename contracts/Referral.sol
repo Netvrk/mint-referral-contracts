@@ -15,7 +15,7 @@ contract Referral is AccessControl, ReentrancyGuard {
     address private _treasury;
     address private _paymentToken;
 
-    uint256 private _price;
+    mapping(uint256 => uint256) private _tierPrices;
     uint256 private _referralFactor;
 
     INFT private _nftContract;
@@ -29,11 +29,42 @@ contract Referral is AccessControl, ReentrancyGuard {
         _nftContract = nftContract_;
         _treasury = treasury_;
         _paymentToken = paymentToken_;
-        _price = 100 * 10 ** 18;
         _referralFactor = 250;
     }
 
-    // Referral mint
+    // Update Functions for Admin
+    function updateReferralFactor(
+        uint256 referralFactor_
+    ) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
+        _referralFactor = referralFactor_;
+    }
+
+    function updateTierPrice(
+        uint256 tierId,
+        uint256 price
+    ) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
+        _tierPrices[tierId] = price;
+    }
+
+    function updateTreasury(
+        address treasury_
+    ) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
+        _treasury = treasury_;
+    }
+
+    // Withdraw function for Admin
+    function withdraw()
+        external
+        virtual
+        nonReentrant
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
+        uint256 balance = IERC20(_paymentToken).balanceOf(address(this));
+        require(balance > 0, "ZERO_BALANCE");
+        IERC20(_paymentToken).transfer(_treasury, balance);
+    }
+
+    // Referral mint function
     function referralMint(
         address recipient,
         uint256 tierId,
@@ -41,7 +72,8 @@ contract Referral is AccessControl, ReentrancyGuard {
         uint256 cost,
         address referer
     ) external virtual nonReentrant {
-        require(cost == _price * tierSize, "INVALID_PRICE");
+        require(_tierPrices[tierId] > 0, "INVALID_TIER_PRICE");
+        require(cost == _tierPrices[tierId] * tierSize, "INVALID_PRICE");
         require(referer != address(0), "INVALID_REFERER");
         require(
             _nftContract.hasRole(MINTER_ROLE, address(this)),
@@ -72,16 +104,5 @@ contract Referral is AccessControl, ReentrancyGuard {
         tierSizes[0] = tierSize;
 
         _nftContract.bulkMint(recipients, tierIds, tierSizes);
-    }
-
-    function withdraw()
-        external
-        virtual
-        nonReentrant
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {
-        uint256 balance = IERC20(_paymentToken).balanceOf(address(this));
-        require(balance > 0, "ZERO_BALANCE");
-        IERC20(_paymentToken).transfer(_treasury, balance);
     }
 }

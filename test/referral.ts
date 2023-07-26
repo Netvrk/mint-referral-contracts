@@ -77,6 +77,13 @@ describe("NFT Referral", function () {
       await nftContract.initTier(1, ethers.utils.parseEther("100"), 100);
     });
 
+    it("Update Tier Price", async function () {
+      await expect(referralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress)).to.be.revertedWith(
+        "INVALID_TIER_PRICE"
+      );
+      await referralContract.updateTierPrice(1, ethers.utils.parseEther("100"));
+    });
+
     it("Mint nfts", async function () {
       await nftContract.bulkMint([userAddress], [1], [5]);
     });
