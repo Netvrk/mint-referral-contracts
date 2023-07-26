@@ -105,4 +105,28 @@ contract Referral is AccessControl, ReentrancyGuard {
 
         _nftContract.bulkMint(recipients, tierIds, tierSizes);
     }
+
+    // Get Functions
+
+    function getTierPrice(
+        uint256 tierId
+    ) external view virtual returns (uint256) {
+        return _tierPrices[tierId];
+    }
+
+    function getReferralFactor() external view virtual returns (uint256) {
+        return _referralFactor;
+    }
+
+    function getTreasury() external view virtual returns (address) {
+        return _treasury;
+    }
+
+    function getPaymentToken() external view virtual returns (address) {
+        return _paymentToken;
+    }
+
+    function getNFTContract() external view virtual returns (address) {
+        return address(_nftContract);
+    }
 }
