@@ -7,9 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "hardhat/console.sol";
 
-import "./interfaces/IMRNft.sol";
+import "./interfaces/IMrNft.sol";
 
-contract MRReferral is AccessControl, ReentrancyGuard {
+contract MrReferral is AccessControl, ReentrancyGuard {
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER");
 
     address private _treasury;
@@ -18,9 +18,9 @@ contract MRReferral is AccessControl, ReentrancyGuard {
     uint256 private _price;
     uint256 private _referralFactor;
 
-    IMRNft private _nftContract;
+    IMrNft private _nftContract;
 
-    constructor(IMRNft nftContract_, address treasury_, address paymentToken_) {
+    constructor(IMrNft nftContract_, address treasury_, address paymentToken_) {
         require(
             nftContract_.supportsInterface(type(IERC721).interfaceId),
             "INVALID_NFT_CONTRACT"

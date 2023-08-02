@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/access/IAccessControl.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
-interface IMRNft is IERC165, IERC721, IAccessControl {
+interface IMrNft is IERC165, IERC721, IAccessControl {
     function mintItem(
         address player,
         string memory axeId,

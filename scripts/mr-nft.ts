@@ -6,9 +6,9 @@ async function main() {
 
   const baseURI = "https://example.com/api/mr/";
 
-  const MRNft = await ethers.getContractFactory("MRNft");
+  const MrNft = await ethers.getContractFactory("MrNft");
 
-  const mr = await MRNft.deploy(baseURI, deployerAddress);
+  const mr = await MrNft.deploy(baseURI, deployerAddress);
 
   await mr.deployed();
 

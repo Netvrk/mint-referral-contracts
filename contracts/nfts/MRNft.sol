@@ -11,7 +11,7 @@ import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 import "hardhat/console.sol";
 
-contract MRNft is ERC2981, ERC721Enumerable, AccessControl {
+contract MrNft is ERC2981, ERC721Enumerable, AccessControl {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
@@ -26,7 +26,7 @@ contract MRNft is ERC2981, ERC721Enumerable, AccessControl {
     constructor(
         string memory baseTokenURI,
         address manager_
-    ) ERC721("MRNft", "MRNft") {
+    ) ERC721("MrNft", "MrNft") {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
         _setupRole(MANAGER_ROLE, manager_);
 

@@ -11,14 +11,14 @@ async function main() {
   await nrgyContract.deployed();
 
   const baseURI = "https://example.com/api/mr/";
-  const MRNft = await ethers.getContractFactory("MRNft");
-  const mr = await MRNft.deploy(baseURI, deployerAddress);
+  const MrNft = await ethers.getContractFactory("MrNft");
+  const mr = await MrNft.deploy(baseURI, deployerAddress);
 
-  const mrReferral = await ethers.getContractFactory("MRReferral");
-  const MRReferralContract = await mrReferral.deploy(mr.address, deployerAddress, nrgyContract.address);
-  await MRReferralContract.deployed();
+  const mrReferral = await ethers.getContractFactory("MrReferral");
+  const MrReferralContract = await mrReferral.deploy(mr.address, deployerAddress, nrgyContract.address);
+  await MrReferralContract.deployed();
 
-  console.log(`MR Referral contract deployed to ${MRReferralContract.address}`);
+  console.log(`MR Referral contract deployed to ${MrReferralContract.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

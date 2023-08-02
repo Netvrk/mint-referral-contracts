@@ -2,12 +2,12 @@ import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { Signer } from "ethers";
 import { ethers } from "hardhat";
-import { MRNft, MRReferral, NRGY } from "../typechain-types";
+import { MrNft, MrReferral, NRGY } from "../typechain-types";
 
 describe("MR Referral Contracts test", function () {
-  let nftContract: MRNft;
+  let nftContract: MrNft;
   let nrgyContract: NRGY;
-  let mrReferralContract: MRReferral;
+  let mrReferralContract: MrReferral;
 
   let owner: Signer;
   let user: Signer;
@@ -41,14 +41,14 @@ describe("MR Referral Contracts test", function () {
     // Deploy NFT
     it("Deploy MR NFT", async function () {
       const baseURI = "https://example.com/api/mr/";
-      const NFT = await ethers.getContractFactory("MRNft");
+      const NFT = await ethers.getContractFactory("MrNft");
       nftContract = await NFT.deploy(baseURI, ownerAddress);
       await nftContract.deployed();
     });
 
-    // Deploy MRReferral
+    // Deploy MrReferral
     it("Deploy MR Referral", async function () {
-      const mrReferral = await ethers.getContractFactory("MRReferral");
+      const mrReferral = await ethers.getContractFactory("MrReferral");
       mrReferralContract = await mrReferral.deploy(nftContract.address, treasuryAddress, nrgyContract.address);
       await mrReferralContract.deployed();
     });
@@ -81,22 +81,22 @@ describe("MR Referral Contracts test", function () {
   });
 
   describe("Referral Mint", async function () {
-    it("Before MRReferral Mint: Check user balance", async function () {
+    it("Before MrReferral Mint: Check user balance", async function () {
       const balance = await nrgyContract.balanceOf(userAddress);
       expect(balance).to.equal(0);
     });
 
-    it("Test MRReferral with valid referer", async function () {
+    it("Test MrReferral with valid referer", async function () {
       await mrReferralContract.referralMint(user2Address, "2", "basic", ethers.utils.parseEther("100").toString(), userAddress);
     });
 
-    it("After MRReferral Mint:Check user balance", async function () {
+    it("After MrReferral Mint:Check user balance", async function () {
       const balance = await nrgyContract.balanceOf(userAddress);
       const balanceParsed = ethers.utils.formatEther(balance);
       expect(balanceParsed).to.equal("25.0");
     });
 
-    it("Test MRReferral with invalid referer", async function () {
+    it("Test MrReferral with invalid referer", async function () {
       await expect(
         mrReferralContract.referralMint(userAddress, "3", "basic", ethers.utils.parseEther("100").toString(), ownerAddress)
       ).to.be.revertedWith("INVALID_REFERER");
