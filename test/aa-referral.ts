@@ -2,12 +2,12 @@ import { time } from "@nomicfoundation/hardhat-network-helpers";
 import { expect } from "chai";
 import { Signer } from "ethers";
 import { ethers } from "hardhat";
-import { NFT, NRGY, Referral } from "../typechain-types";
+import { AaNft, AaReferral, NRGY } from "../typechain-types";
 
-describe("NFT Referral", function () {
-  let nftContract: NFT;
+describe("AaNft AaReferral", function () {
+  let nftContract: AaNft;
   let nrgyContract: NRGY;
-  let referralContract: Referral;
+  let AaReferralContract: AaReferral;
 
   let owner: Signer;
   let user: Signer;
@@ -40,35 +40,35 @@ describe("NFT Referral", function () {
 
     // Deploy NFT
     it("Deploy NFT", async function () {
-      const NFT = await ethers.getContractFactory("NFT");
+      const NFT = await ethers.getContractFactory("AaNft");
       nftContract = await NFT.deploy("https://example.com/", ownerAddress, ownerAddress, nrgyContract.address);
       await nftContract.deployed();
     });
 
-    // Deploy Referral
-    it("Deploy Referral", async function () {
-      const Referral = await ethers.getContractFactory("Referral");
-      referralContract = await Referral.deploy(nftContract.address, treasuryAddress, nrgyContract.address);
-      await referralContract.deployed();
+    // Deploy AaReferral
+    it("Deploy AaReferral", async function () {
+      const AaReferral = await ethers.getContractFactory("AaReferral");
+      AaReferralContract = await AaReferral.deploy(nftContract.address, treasuryAddress, nrgyContract.address);
+      await AaReferralContract.deployed();
     });
   });
 
   describe("Provide minter role and add allowance", async function () {
     it("Shouldn't mint", async function () {
-      await expect(referralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress)).to.be.reverted;
+      await expect(AaReferralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress)).to.be.reverted;
     });
 
     it("Provide minter role", async function () {
-      await nftContract.grantRole(await nftContract.MINTER_ROLE(), referralContract.address);
+      await nftContract.grantRole(await nftContract.MINTER_ROLE(), AaReferralContract.address);
     });
 
     it("Check minter role", async function () {
-      const hasRole = await nftContract.hasRole(await nftContract.MINTER_ROLE(), referralContract.address);
+      const hasRole = await nftContract.hasRole(await nftContract.MINTER_ROLE(), AaReferralContract.address);
       expect(hasRole).to.equal(true);
     });
 
     it("Add allowance", async function () {
-      await nrgyContract.approve(referralContract.address, ethers.utils.parseEther("2000").toString());
+      await nrgyContract.approve(AaReferralContract.address, ethers.utils.parseEther("2000").toString());
     });
   });
 
@@ -78,10 +78,10 @@ describe("NFT Referral", function () {
     });
 
     it("Update Tier Price", async function () {
-      await expect(referralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress)).to.be.revertedWith(
+      await expect(AaReferralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress)).to.be.revertedWith(
         "INVALID_TIER_PRICE"
       );
-      await referralContract.updateTierPrice(1, ethers.utils.parseEther("100"));
+      await AaReferralContract.updateTierPrice(1, ethers.utils.parseEther("100"));
     });
 
     it("Mint nfts", async function () {
@@ -89,24 +89,24 @@ describe("NFT Referral", function () {
     });
   });
 
-  describe("Referral", async function () {
-    it("Before Referral Mint: Check user balance", async function () {
+  describe("AaReferral", async function () {
+    it("Before AaReferral Mint: Check user balance", async function () {
       const balance = await nrgyContract.balanceOf(userAddress);
       expect(balance).to.equal(0);
     });
 
-    it("Test referral with valid referer", async function () {
-      await referralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress);
+    it("Test AaReferral with valid referer", async function () {
+      await AaReferralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress);
     });
 
-    it("After Referral Mint:Check user balance", async function () {
+    it("After AaReferral Mint:Check user balance", async function () {
       const balance = await nrgyContract.balanceOf(userAddress);
       const balanceParsed = ethers.utils.formatEther(balance);
       expect(balanceParsed).to.equal("25.0");
     });
 
-    it("Test referral with invalid referer", async function () {
-      await expect(referralContract.referralMint(userAddress, 1, 1, ethers.utils.parseEther("100").toString(), ownerAddress)).to.be.revertedWith(
+    it("Test AaReferral with invalid referer", async function () {
+      await expect(AaReferralContract.referralMint(userAddress, 1, 1, ethers.utils.parseEther("100").toString(), ownerAddress)).to.be.revertedWith(
         "INVALID_REFERER"
       );
     });
@@ -120,8 +120,8 @@ describe("NFT Referral", function () {
     });
 
     it("Withdraw funds to treasury", async function () {
-      contractBalance = ethers.utils.formatEther(await nrgyContract.balanceOf(referralContract.address));
-      await referralContract.withdraw();
+      contractBalance = ethers.utils.formatEther(await nrgyContract.balanceOf(AaReferralContract.address));
+      await AaReferralContract.withdraw();
     });
 
     it("After withdraw: Check treasury balance", async function () {

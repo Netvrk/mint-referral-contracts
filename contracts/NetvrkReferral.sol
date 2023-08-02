@@ -7,20 +7,24 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "hardhat/console.sol";
 
-import "./interfaces/INFT.sol";
+import "./interfaces/IRootNft.sol";
 
-contract Referral is AccessControl, ReentrancyGuard {
+contract NetvrkReferral is AccessControl, ReentrancyGuard {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
     address private _treasury;
     address private _paymentToken;
 
-    mapping(uint256 => uint256) private _tierPrices;
+    uint256 private _price;
     uint256 private _referralFactor;
 
-    INFT private _nftContract;
+    IRootNft private _nftContract;
 
-    constructor(INFT nftContract_, address treasury_, address paymentToken_) {
+    constructor(
+        IRootNft nftContract_,
+        address treasury_,
+        address paymentToken_
+    ) {
         require(
             nftContract_.supportsInterface(type(IERC721).interfaceId),
             "INVALID_NFT_CONTRACT"
@@ -30,20 +34,21 @@ contract Referral is AccessControl, ReentrancyGuard {
         _treasury = treasury_;
         _paymentToken = paymentToken_;
         _referralFactor = 250;
+
+        _price = 0.1 ether;
     }
 
     // Update Functions for Admin
-    function updateReferralFactor(
-        uint256 referralFactor_
+    function updateAaReferralFactor(
+        uint256 AaReferralFactor_
     ) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
-        _referralFactor = referralFactor_;
+        _referralFactor = AaReferralFactor_;
     }
 
-    function updateTierPrice(
-        uint256 tierId,
+    function updatePrice(
         uint256 price
     ) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
-        _tierPrices[tierId] = price;
+        _price = price;
     }
 
     function updateTreasury(
@@ -64,16 +69,15 @@ contract Referral is AccessControl, ReentrancyGuard {
         IERC20(_paymentToken).transfer(_treasury, balance);
     }
 
-    // Referral mint function
+    // AaReferral mint function
     function referralMint(
         address recipient,
-        uint256 tierId,
-        uint256 tierSize,
+        uint256 tokenId,
         uint256 cost,
         address referer
     ) external virtual nonReentrant {
-        require(_tierPrices[tierId] > 0, "INVALID_TIER_PRICE");
-        require(cost == _tierPrices[tierId] * tierSize, "INVALID_PRICE");
+        require(_price > 0, "INVALID_TIER_PRICE");
+        require(cost == _price, "INVALID_PRICE");
         require(referer != address(0), "INVALID_REFERER");
         require(
             _nftContract.hasRole(MINTER_ROLE, address(this)),
@@ -82,6 +86,11 @@ contract Referral is AccessControl, ReentrancyGuard {
 
         // Check if the referer is valid
         require(_nftContract.balanceOf(referer) > 0, "INVALID_REFERER");
+
+        require(
+            _nftContract.ownerOf(tokenId) == address(0),
+            "INVALID_TOKEN_ID"
+        );
 
         // Provide revenue to referer
         uint256 treasurytake = (cost * (1000 - _referralFactor)) / 1000;
@@ -93,25 +102,13 @@ contract Referral is AccessControl, ReentrancyGuard {
         );
         IERC20(_paymentToken).transferFrom(msg.sender, referer, referralTake);
 
-        // Mint NFT
-        address[] memory recipients = new address[](1);
-        recipients[0] = recipient;
-
-        uint256[] memory tierIds = new uint256[](1);
-        tierIds[0] = tierId;
-
-        uint256[] memory tierSizes = new uint256[](1);
-        tierSizes[0] = tierSize;
-
-        _nftContract.bulkMint(recipients, tierIds, tierSizes);
+        _nftContract.mint(recipient, tokenId);
     }
 
     // Get Functions
 
-    function getTierPrice(
-        uint256 tierId
-    ) external view virtual returns (uint256) {
-        return _tierPrices[tierId];
+    function getPrice() external view virtual returns (uint256) {
+        return _price;
     }
 
     function getReferralFactor() external view virtual returns (uint256) {
@@ -126,7 +123,7 @@ contract Referral is AccessControl, ReentrancyGuard {
         return _paymentToken;
     }
 
-    function getNFTContract() external view virtual returns (address) {
+    function getNftContract() external view virtual returns (address) {
         return address(_nftContract);
     }
 }

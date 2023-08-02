@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
-contract NFT is ERC2981, AccessControl, ReentrancyGuard, ERC721Enumerable {
+contract AaNft is ERC2981, AccessControl, ReentrancyGuard, ERC721Enumerable {
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
 
@@ -40,7 +40,7 @@ contract NFT is ERC2981, AccessControl, ReentrancyGuard, ERC721Enumerable {
         address treasury_,
         address manager_,
         address paymentToken_
-    ) ERC721("NFT", "NFT") {
+    ) ERC721("AaNft", "AaNft") {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(MANAGER_ROLE, manager_);
         _setupRole(MINTER_ROLE, manager_);
@@ -51,7 +51,7 @@ contract NFT is ERC2981, AccessControl, ReentrancyGuard, ERC721Enumerable {
         _paymentToken = paymentToken_;
     }
 
-    // Set NFT base URI
+    // Set AaNft base URI
     function setBaseURI(
         string memory newBaseURI_
     ) external virtual onlyRole(MANAGER_ROLE) {
