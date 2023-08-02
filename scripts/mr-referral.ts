@@ -10,15 +10,15 @@ async function main() {
   const nrgyContract = await NRGY.deploy();
   await nrgyContract.deployed();
 
-  // AaNFT
-  const AaNft = await ethers.getContractFactory("AaNft");
-  const nftContract = await AaNft.deploy("https://example.com/", deployerAddress, deployerAddress, nrgyContract.address);
+  const baseURI = "https://example.com/api/mr/";
+  const MRNft = await ethers.getContractFactory("MRNft");
+  const mr = await MRNft.deploy(baseURI, deployerAddress);
 
-  const aaReferral = await ethers.getContractFactory("AaReferral");
-  const AaReferralContract = await aaReferral.deploy(nftContract.address, deployerAddress, nrgyContract.address);
-  await AaReferralContract.deployed();
+  const mrReferral = await ethers.getContractFactory("MRReferral");
+  const MRReferralContract = await mrReferral.deploy(mr.address, deployerAddress, nrgyContract.address);
+  await MRReferralContract.deployed();
 
-  console.log(`AA Referral contracts deployed to ${AaReferralContract.address}`);
+  console.log(`MR Referral contract deployed to ${MRReferralContract.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

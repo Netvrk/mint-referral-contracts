@@ -1,24 +1,17 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.15;
+pragma solidity ^0.8.18;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
-import "@openzeppelin/contracts-upgradeable/token/ERC721/extensions/ERC721EnumerableUpgradeable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Enumerable.sol";
 import "@openzeppelin/contracts/utils/Counters.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
 import "hardhat/console.sol";
 
-contract MRNft is
-    ERC2981,
-    ERC721EnumerableUpgradeable,
-    AccessControlUpgradeable,
-    UUPSUpgradeable
-{
+contract MRNft is ERC2981, ERC721Enumerable, AccessControl {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
 
@@ -30,18 +23,12 @@ contract MRNft is
     mapping(string => uint256) private _axeIdToTokenId;
     mapping(uint256 => string) private _tokenIdToAxeId;
 
-    function initialize(
+    constructor(
         string memory baseTokenURI,
-        address manager
-    ) public initializer {
-        __ERC721_init("AXE", "AXE");
-        __ERC721Enumerable_init_unchained();
-        __UUPSUpgradeable_init_unchained();
-        __Context_init_unchained();
-        __AccessControl_init_unchained();
-
+        address manager_
+    ) ERC721("MRNft", "MRNft") {
         _setupRole(DEFAULT_ADMIN_ROLE, _msgSender());
-        _setupRole(MANAGER_ROLE, manager);
+        _setupRole(MANAGER_ROLE, manager_);
 
         _baseTokenURI = baseTokenURI;
         _tokenIds.increment();
@@ -179,7 +166,7 @@ contract MRNft is
         public
         view
         virtual
-        override(ERC2981, ERC721EnumerableUpgradeable, AccessControlUpgradeable)
+        override(ERC2981, ERC721Enumerable, AccessControl)
         returns (bool)
     {
         if (interfaceId == type(IERC2981).interfaceId) {
@@ -188,9 +175,4 @@ contract MRNft is
 
         return super.supportsInterface(interfaceId);
     }
-
-    // UUPS proxy function
-    function _authorizeUpgrade(
-        address
-    ) internal override onlyRole(DEFAULT_ADMIN_ROLE) {}
 }

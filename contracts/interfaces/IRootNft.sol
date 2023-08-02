@@ -7,4 +7,6 @@ import "@openzeppelin/contracts/utils/introspection/IERC165.sol";
 
 interface IRootNft is IERC165, IERC721, IAccessControl {
     function mint(address user, uint256 tokenId) external;
+
+    function exists(uint256 tokenId) external view returns (bool);
 }

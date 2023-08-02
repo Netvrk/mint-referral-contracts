@@ -9,8 +9,8 @@ import "hardhat/console.sol";
 
 import "./interfaces/IRootNft.sol";
 
-contract NetvrkReferral is AccessControl, ReentrancyGuard {
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+contract RootReferral is AccessControl, ReentrancyGuard {
+    bytes32 public constant PREDICATE_ROLE = keccak256("PREDICATE_ROLE");
 
     address private _treasury;
     address private _paymentToken;
@@ -35,7 +35,7 @@ contract NetvrkReferral is AccessControl, ReentrancyGuard {
         _paymentToken = paymentToken_;
         _referralFactor = 250;
 
-        _price = 0.1 ether;
+        _price = 100 ether;
     }
 
     // Update Functions for Admin
@@ -76,21 +76,17 @@ contract NetvrkReferral is AccessControl, ReentrancyGuard {
         uint256 cost,
         address referer
     ) external virtual nonReentrant {
-        require(_price > 0, "INVALID_TIER_PRICE");
         require(cost == _price, "INVALID_PRICE");
         require(referer != address(0), "INVALID_REFERER");
         require(
-            _nftContract.hasRole(MINTER_ROLE, address(this)),
-            "INVALID_MINTER_ROLE"
+            _nftContract.hasRole(PREDICATE_ROLE, address(this)),
+            "INVALID_PREDICATE_ROLE"
         );
 
         // Check if the referer is valid
         require(_nftContract.balanceOf(referer) > 0, "INVALID_REFERER");
 
-        require(
-            _nftContract.ownerOf(tokenId) == address(0),
-            "INVALID_TOKEN_ID"
-        );
+        require(!_nftContract.exists(tokenId), "INVALID_TOKEN_ID");
 
         // Provide revenue to referer
         uint256 treasurytake = (cost * (1000 - _referralFactor)) / 1000;
@@ -101,7 +97,6 @@ contract NetvrkReferral is AccessControl, ReentrancyGuard {
             treasurytake
         );
         IERC20(_paymentToken).transferFrom(msg.sender, referer, referralTake);
-
         _nftContract.mint(recipient, tokenId);
     }
 

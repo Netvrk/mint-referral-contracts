@@ -10,7 +10,7 @@ import "hardhat/console.sol";
 import "./interfaces/IMRNft.sol";
 
 contract MRReferral is AccessControl, ReentrancyGuard {
-    bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER");
 
     address private _treasury;
     address private _paymentToken;
@@ -31,7 +31,7 @@ contract MRReferral is AccessControl, ReentrancyGuard {
         _paymentToken = paymentToken_;
         _referralFactor = 250;
 
-        _price = 0.1 ether;
+        _price = 100 ether;
     }
 
     // Update Functions for Admin
@@ -77,8 +77,8 @@ contract MRReferral is AccessControl, ReentrancyGuard {
         require(cost == _price, "INVALID_PRICE");
         require(referer != address(0), "INVALID_REFERER");
         require(
-            _nftContract.hasRole(MINTER_ROLE, address(this)),
-            "INVALID_MINTER_ROLE"
+            _nftContract.hasRole(MANAGER_ROLE, address(this)),
+            "INVALID_MANAGER"
         );
 
         // Check if the referer is valid

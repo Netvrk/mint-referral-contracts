@@ -1,3 +1,5 @@
+import "@openzeppelin/hardhat-upgrades";
+
 import "@nomicfoundation/hardhat-toolbox";
 import { HardhatUserConfig } from "hardhat/config";
 
