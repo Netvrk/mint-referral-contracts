@@ -5,6 +5,7 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   const deployerAddress = await deployer.getAddress();
 
+  /*
   // NRGY
   const NRGY = await ethers.getContractFactory("NRGY");
   const nrgyContract = await NRGY.deploy();
@@ -13,6 +14,16 @@ async function main() {
   // AaNFT
   const AaNft = await ethers.getContractFactory("AaNft");
   const nftContract = await AaNft.deploy("https://example.com/", deployerAddress, deployerAddress, nrgyContract.address);
+
+  */
+
+  const nrgyContract = {
+    address: "0x9DFD626221C2A88d38253dd90b09521DBa00108d",
+  };
+
+  const nftContract = {
+    address: "0x96694a89BC38982824e8EfB8529ebe661EFDA6f6",
+  };
 
   const aaReferral = await ethers.getContractFactory("AaReferral");
   const AaReferralContract = await aaReferral.deploy(nftContract.address, deployerAddress, nrgyContract.address);

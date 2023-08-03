@@ -1,11 +1,11 @@
 import { ethers } from "hardhat";
 
 async function main() {
-  const nrgyAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+  const nrgyAddress = "0x9DFD626221C2A88d38253dd90b09521DBa00108d";
   const AaNft = await ethers.getContractFactory("AaNft");
   const [deployer] = await ethers.getSigners();
   const deployerAddress = await deployer.getAddress();
-  const nftContract = await AaNft.deploy("https://example.com/", deployerAddress, deployerAddress, nrgyAddress);
+  const nftContract = await AaNft.deploy("https://example.com/aa/", deployerAddress, deployerAddress, nrgyAddress);
 
   await nftContract.deployed();
 

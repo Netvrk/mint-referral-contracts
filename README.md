@@ -1,13 +1,5 @@
-# Sample Hardhat Project
+### Goerli Test Network
 
-This project demonstrates a basic Hardhat use case. It comes with a sample contract, a test for that contract, and a script that deploys that contract.
-
-Try running some of the following tasks:
-
-```shell
-npx hardhat help
-npx hardhat test
-REPORT_GAS=true npx hardhat test
-npx hardhat node
-npx hardhat run scripts/deploy.ts
-```
+- **NRGY Token:** [0x9DFD626221C2A88d38253dd90b09521DBa00108d](https://goerli.etherscan.io/address/0x9DFD626221C2A88d38253dd90b09521DBa00108d)
+- **Aa NFT Address:** [0x96694a89BC38982824e8EfB8529ebe661EFDA6f6](https://goerli.etherscan.io/address/0x96694a89BC38982824e8EfB8529ebe661EFDA6f6)
+- **Aa Referral Address:** [0x236A571F7D330179423C57713B492c5ef8e33dEc](https://goerli.etherscan.io/address/0x236A571F7D330179423C57713B492c5ef8e33dEc)
