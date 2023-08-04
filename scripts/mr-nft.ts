@@ -12,7 +12,7 @@ async function main() {
 
   await mr.deployed();
 
-  console.log(`AaNft deployed to ${mr.address}`);
+  console.log(`MR Nft deployed to ${mr.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

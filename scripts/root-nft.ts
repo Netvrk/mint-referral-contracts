@@ -7,7 +7,7 @@ async function main() {
 
   await rootNft.deployed();
 
-  console.log(`AaNft deployed to ${rootNft.address}`);
+  console.log(`Root NFT deployed to ${rootNft.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
