@@ -5,6 +5,8 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+
 import "hardhat/console.sol";
 
 import "./interfaces/IAaNft.sol";
@@ -16,9 +18,10 @@ contract AaReferral is AccessControl, ReentrancyGuard {
     address private _paymentToken;
 
     mapping(uint256 => uint256) private _tierPrices;
-    uint256 private _referralFactor;
 
     IAaNft private _nftContract;
+
+    bytes32 private _merkleRoot;
 
     constructor(IAaNft nftContract_, address treasury_, address paymentToken_) {
         require(
@@ -29,14 +32,6 @@ contract AaReferral is AccessControl, ReentrancyGuard {
         _nftContract = nftContract_;
         _treasury = treasury_;
         _paymentToken = paymentToken_;
-        _referralFactor = 250;
-    }
-
-    // Update Functions for Admin
-    function updateAaReferralFactor(
-        uint256 AaReferralFactor_
-    ) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
-        _referralFactor = AaReferralFactor_;
     }
 
     function updateTierPrice(
@@ -70,7 +65,9 @@ contract AaReferral is AccessControl, ReentrancyGuard {
         uint256 tierId,
         uint256 tierSize,
         uint256 cost,
-        address referer
+        address referer,
+        uint256 _referralFactor,
+        bytes32[] memory proof
     ) external virtual nonReentrant {
         require(_tierPrices[tierId] > 0, "INVALID_TIER_PRICE");
         require(cost == _tierPrices[tierId] * tierSize, "INVALID_PRICE");
@@ -82,6 +79,13 @@ contract AaReferral is AccessControl, ReentrancyGuard {
 
         // Check if the referer is valid
         require(_nftContract.balanceOf(referer) > 0, "INVALID_REFERER");
+
+        // Check if the merkle proof is valid
+
+        require(
+            _verifyMerkleProof(proof, referer, _referralFactor),
+            "INVALID_MERKLE_PROOF"
+        );
 
         // Provide revenue to referer
         uint256 treasurytake = (cost * (1000 - _referralFactor)) / 1000;
@@ -106,16 +110,31 @@ contract AaReferral is AccessControl, ReentrancyGuard {
         _nftContract.bulkMint(recipients, tierIds, tierSizes);
     }
 
+    function updateMerkleRoot(
+        bytes32 merkleRoot_
+    ) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
+        _merkleRoot = merkleRoot_;
+    }
+
+    function _verifyMerkleProof(
+        bytes32[] memory proof,
+        address referer,
+        uint256 referralFactor
+    ) internal view returns (bool) {
+        bytes32 leaf = keccak256(abi.encodePacked(referer, referralFactor));
+        return MerkleProof.verify(proof, _merkleRoot, leaf);
+    }
+
     // Get Functions
+
+    function getMerkleRoot() external view virtual returns (bytes32) {
+        return _merkleRoot;
+    }
 
     function getTierPrice(
         uint256 tierId
     ) external view virtual returns (uint256) {
         return _tierPrices[tierId];
-    }
-
-    function getReferralFactor() external view virtual returns (uint256) {
-        return _referralFactor;
     }
 
     function getTreasury() external view virtual returns (address) {

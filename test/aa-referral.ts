@@ -3,6 +3,8 @@ import { expect } from "chai";
 import { Signer } from "ethers";
 import { ethers } from "hardhat";
 import { AaNft, AaReferral, NRGY } from "../typechain-types";
+const { MerkleTree } = require("merkletreejs");
+const keccak256 = require("keccak256");
 
 describe("AA NFT Contracts test", function () {
   let nftContract: AaNft;
@@ -17,8 +19,13 @@ describe("AA NFT Contracts test", function () {
   let userAddress: string;
   let user2Address: string;
   let treasuryAddress: string;
-
+  let tree: any;
+  let root: string;
   let now: number;
+
+  let hexProofs: {
+    [key: string]: string[];
+  } = {};
 
   before(async function () {
     [owner, user, user2, treasury] = await ethers.getSigners();
@@ -26,8 +33,30 @@ describe("AA NFT Contracts test", function () {
     userAddress = await user.getAddress();
     user2Address = await user2.getAddress();
     treasuryAddress = await treasury.getAddress();
-
     now = await time.latest();
+
+    // Users in whitelist
+    const whiteListed = [
+      {
+        user: userAddress,
+        factor: 250,
+      },
+      {
+        user: ownerAddress,
+        factor: 250,
+      },
+    ];
+
+    const leaves = whiteListed.map((x) => {
+      return keccak256(ethers.utils.solidityPack(["address", "uint256"], [x.user, x.factor]));
+    });
+
+    tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
+    root = "0x" + tree.getRoot().toString("hex");
+
+    whiteListed.forEach((x) => {
+      hexProofs[x.user] = tree.getHexProof(keccak256(ethers.utils.solidityPack(["address", "uint256"], [x.user, x.factor])));
+    });
   });
 
   describe("Deployments", async function () {
@@ -55,7 +84,9 @@ describe("AA NFT Contracts test", function () {
 
   describe("Provide minter role and add allowance", async function () {
     it("Shouldn't mint", async function () {
-      await expect(aaReferralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress)).to.be.reverted;
+      await expect(
+        aaReferralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress, 250, hexProofs[userAddress])
+      ).to.be.reverted;
     });
 
     it("Provide minter role", async function () {
@@ -72,15 +103,21 @@ describe("AA NFT Contracts test", function () {
     });
   });
 
+  describe("Update merkle root", async function () {
+    it("Update merkle root", async function () {
+      await aaReferralContract.updateMerkleRoot(root);
+    });
+  });
+
   describe("Initialize tier and mint nfts", async function () {
     it("Initialize tier", async function () {
       await nftContract.initTier(1, ethers.utils.parseEther("100"), 100);
     });
 
     it("Update Tier Price", async function () {
-      await expect(aaReferralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress)).to.be.revertedWith(
-        "INVALID_TIER_PRICE"
-      );
+      await expect(
+        aaReferralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress, 250, hexProofs[userAddress])
+      ).to.be.revertedWith("INVALID_TIER_PRICE");
       await aaReferralContract.updateTierPrice(1, ethers.utils.parseEther("100"));
     });
 
@@ -96,7 +133,7 @@ describe("AA NFT Contracts test", function () {
     });
 
     it("Test AaReferral with valid referer", async function () {
-      await aaReferralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress);
+      await aaReferralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress, 250, hexProofs[userAddress]);
     });
 
     it("After AaReferral Mint:Check user balance", async function () {
@@ -106,9 +143,9 @@ describe("AA NFT Contracts test", function () {
     });
 
     it("Test AaReferral with invalid referer", async function () {
-      await expect(aaReferralContract.referralMint(userAddress, 1, 1, ethers.utils.parseEther("100").toString(), ownerAddress)).to.be.revertedWith(
-        "INVALID_REFERER"
-      );
+      await expect(
+        aaReferralContract.referralMint(userAddress, 1, 1, ethers.utils.parseEther("100").toString(), ownerAddress, 250, hexProofs[ownerAddress])
+      ).to.be.revertedWith("INVALID_REFERER");
     });
   });
 
