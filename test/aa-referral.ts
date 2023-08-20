@@ -103,12 +103,6 @@ describe("AA NFT Contracts test", function () {
     });
   });
 
-  describe("Update merkle root", async function () {
-    it("Update merkle root", async function () {
-      await aaReferralContract.updateMerkleRoot(root);
-    });
-  });
-
   describe("Initialize tier and mint nfts", async function () {
     it("Initialize tier", async function () {
       await nftContract.initTier(1, ethers.utils.parseEther("100"), 100);
@@ -123,6 +117,13 @@ describe("AA NFT Contracts test", function () {
 
     it("Mint nfts", async function () {
       await nftContract.bulkMint([userAddress], [1], [5]);
+    });
+  });
+
+  describe("Update snapshot with merkle root", async function () {
+    it("Update merkle root", async function () {
+      const now = await time.latest();
+      await aaReferralContract.updateMerkleRoot(now, root);
     });
   });
 
@@ -146,6 +147,15 @@ describe("AA NFT Contracts test", function () {
       await expect(
         aaReferralContract.referralMint(userAddress, 1, 1, ethers.utils.parseEther("100").toString(), ownerAddress, 250, hexProofs[ownerAddress])
       ).to.be.revertedWith("INVALID_REFERER");
+    });
+  });
+
+  describe("Mint after snapshot expiry", async function () {
+    it("Shouldn't mint", async function () {
+      await time.increase(86400 * 1);
+      await expect(
+        aaReferralContract.referralMint(user2Address, 1, 1, ethers.utils.parseEther("100").toString(), userAddress, 250, hexProofs[userAddress])
+      ).to.be.revertedWith("INVALID_SNAPSHOT");
     });
   });
 

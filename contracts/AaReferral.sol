@@ -13,6 +13,7 @@ import "./interfaces/IAaNft.sol";
 
 contract AaReferral is AccessControl, ReentrancyGuard {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
 
     address private _treasury;
     address private _paymentToken;
@@ -21,7 +22,13 @@ contract AaReferral is AccessControl, ReentrancyGuard {
 
     IAaNft private _nftContract;
 
-    bytes32 private _merkleRoot;
+    struct snapshot {
+        uint256 start;
+        uint256 end;
+        bytes32 merkleRoot;
+    }
+    snapshot[] private _snapshots;
+    uint256 private _snapshotRange;
 
     constructor(IAaNft nftContract_, address treasury_, address paymentToken_) {
         require(
@@ -29,9 +36,11 @@ contract AaReferral is AccessControl, ReentrancyGuard {
             "INVALID_NFT_CONTRACT"
         );
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(MANAGER_ROLE, msg.sender);
         _nftContract = nftContract_;
         _treasury = treasury_;
         _paymentToken = paymentToken_;
+        _snapshotRange = 1 days;
     }
 
     function updateTierPrice(
@@ -66,7 +75,7 @@ contract AaReferral is AccessControl, ReentrancyGuard {
         uint256 tierSize,
         uint256 cost,
         address referer,
-        uint256 _referralFactor,
+        uint256 referralFactor,
         bytes32[] memory proof
     ) external virtual nonReentrant {
         require(_tierPrices[tierId] > 0, "INVALID_TIER_PRICE");
@@ -80,15 +89,21 @@ contract AaReferral is AccessControl, ReentrancyGuard {
         // Check if the referer is valid
         require(_nftContract.balanceOf(referer) > 0, "INVALID_REFERER");
 
-        // Check if the merkle proof is valid
-
+        // Check if the snapshot is valid
         require(
-            _verifyMerkleProof(proof, referer, _referralFactor),
+            _snapshots[_snapshots.length - 1].start <= block.timestamp &&
+                _snapshots[_snapshots.length - 1].end >= block.timestamp,
+            "INVALID_SNAPSHOT"
+        );
+
+        // Check if the merkle proof is valid
+        require(
+            _verifyMerkleProof(proof, referer, referralFactor),
             "INVALID_MERKLE_PROOF"
         );
 
         // Provide revenue to referer
-        uint256 treasurytake = (cost * (1000 - _referralFactor)) / 1000;
+        uint256 treasurytake = (cost * (1000 - referralFactor)) / 1000;
         uint256 referralTake = cost - treasurytake;
         IERC20(_paymentToken).transferFrom(
             msg.sender,
@@ -111,9 +126,22 @@ contract AaReferral is AccessControl, ReentrancyGuard {
     }
 
     function updateMerkleRoot(
+        uint256 startTimestamp,
         bytes32 merkleRoot_
+    ) external virtual onlyRole(MANAGER_ROLE) {
+        _snapshots.push(
+            snapshot(
+                startTimestamp,
+                startTimestamp + _snapshotRange,
+                merkleRoot_
+            )
+        );
+    }
+
+    function updateSnapshotRangeInDays(
+        uint16 snapshotRange_
     ) external virtual onlyRole(DEFAULT_ADMIN_ROLE) {
-        _merkleRoot = merkleRoot_;
+        _snapshotRange = snapshotRange_ * 1 days;
     }
 
     function _verifyMerkleProof(
@@ -122,13 +150,28 @@ contract AaReferral is AccessControl, ReentrancyGuard {
         uint256 referralFactor
     ) internal view returns (bool) {
         bytes32 leaf = keccak256(abi.encodePacked(referer, referralFactor));
-        return MerkleProof.verify(proof, _merkleRoot, leaf);
+        return
+            MerkleProof.verify(
+                proof,
+                _snapshots[_snapshots.length - 1].merkleRoot,
+                leaf
+            );
     }
 
     // Get Functions
 
-    function getMerkleRoot() external view virtual returns (bytes32) {
-        return _merkleRoot;
+    function getLatestMerkleRoot() external view virtual returns (bytes32) {
+        return _snapshots[_snapshots.length - 1].merkleRoot;
+    }
+
+    function getSnapshot(
+        uint256 snapshotId
+    ) external view virtual returns (snapshot memory) {
+        return _snapshots[snapshotId];
+    }
+
+    function getSnapshotIndex() external view virtual returns (uint256) {
+        return _snapshots.length - 1;
     }
 
     function getTierPrice(

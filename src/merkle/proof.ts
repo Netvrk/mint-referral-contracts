@@ -1,4 +1,5 @@
 import { ethers } from "ethers";
+import getClosestBlock from "../utils/block";
 
 const { MerkleTree } = require("merkletreejs");
 const keccak256 = require("keccak256");
@@ -25,3 +26,7 @@ const hexProof = tree.getHexProof(keccak256(ethers.utils.solidityPack(["address"
 // Proof needed to prove that the address is in the white list
 // Used in smart contract
 console.log("Proof", hexProof);
+
+getClosestBlock(1692100000, "ethereum").then((block) => {
+  console.log(block);
+});
