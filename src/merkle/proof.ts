@@ -1,32 +1,29 @@
 import { ethers } from "ethers";
-import getClosestBlock from "../utils/block";
+import * as fs from "fs";
+import keccak256 from "keccak256";
+import * as path from "path";
+import { CsvFile } from "../utils/csv-file";
+import { getMerkleTree } from "./root";
 
-const { MerkleTree } = require("merkletreejs");
-const keccak256 = require("keccak256");
+async function getProof(snapshotData: any, user: string, factor: number) {
+  const tree = getMerkleTree(snapshotData);
+  const hexProof = tree.getHexProof(keccak256(ethers.utils.solidityPack(["address", "uint256"], [user, factor])));
+  return hexProof;
+}
 
-// Users in whitelist
-const whiteListed = [
-  { user: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8", factor: 250 },
-  { user: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC", factor: 250 },
-  { user: "0x90F79bf6EB2c4f870365E785982E1f101E93b906", factor: 250 },
-];
+export async function getProofFromFile(user: string, factor: number, filename: string = "") {
+  const inFile = path.join(__dirname, `../../exports/snapshots/${filename}.csv`);
+  if (!fs.existsSync(inFile)) {
+    console.log("User snapshot list not found");
+    return;
+  }
 
-const leaves = whiteListed.map((x) => {
-  return keccak256(ethers.utils.solidityPack(["address", "uint256"], [x.user, x.factor]));
-});
-const tree = new MerkleTree(leaves, keccak256, { sortPairs: true });
+  const readCsvFile = new CsvFile({
+    path: inFile,
+    headers: ["user", "staked", "unstaked", "total", "factor"],
+  });
+  const records = await readCsvFile.read();
+  const proof = getProof(records, user, factor);
 
-const root = "0x" + tree.getRoot().toString("hex");
-
-// The root hash used to set merkle root in smart contract
-console.log("Root Hash", root);
-
-const hexProof = tree.getHexProof(keccak256(ethers.utils.solidityPack(["address", "uint256"], ["0x90f79bf6eb2c4f870365e785982e1f101e93b906", 250])));
-
-// Proof needed to prove that the address is in the white list
-// Used in smart contract
-console.log("Proof", hexProof);
-
-getClosestBlock(1692100000, "ethereum").then((block) => {
-  console.log(block);
-});
+  return proof;
+}

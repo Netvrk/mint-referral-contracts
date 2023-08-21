@@ -1,38 +1,13 @@
-import { getUserTokensFromMainnetPool, getUsersFromMainnetPool } from "./pool/users";
-
-const mainnetPools = ["land", "transport", "avatar", "bonus"];
-
-interface UserToken {
-  [user: string]: {
-    [pool: string]: {
-      staked: number;
-      unstaked: number;
-      total: number;
-      tokenIds: number[];
-    };
-  };
-}
+import { getProofFromFile } from "./merkle/proof";
+import { getMerkleRootFromFile } from "./merkle/root";
 
 async function main() {
-  const users = await getUsersFromMainnetPool();
-  let result: UserToken = {};
-  for (let user of users) {
-    console.log(`User: ${user}`);
-    for (let pool of mainnetPools) {
-      const tokens = await getUserTokensFromMainnetPool(pool, user);
-      const staked = tokens.filter((t) => t.active);
-      const unstaked = tokens.filter((t) => !t.active);
-      if (!result[user]) {
-        result[user] = {};
-      }
-      result[user][pool] = {
-        tokenIds: tokens.map((t) => t.tokenId),
-        total: tokens.length,
-        staked: staked.length,
-        unstaked: unstaked.length,
-      };
-    }
-  }
+  const fileName = "2023-08-18";
+
+  const root = await getMerkleRootFromFile(fileName);
+  console.log("Root Hash", root);
+  const proof = await getProofFromFile("0xffb8c9ec9951b1d22ae0676a8965de43412ceb7d", 100, fileName);
+  console.log("Proof", proof);
 }
 
 main().catch((err) => {
