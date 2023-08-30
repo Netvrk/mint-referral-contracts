@@ -1,7 +1,9 @@
 {
   "name": "hardhat-project",
   "scripts": {
-    "start": "npx ts-node ./src/index.ts"
+    "dev": "npx ts-node ./src/index.ts",
+    "build": "npx tsc",
+    "start": "node ./dist/index.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-ethers": "^3.0.4",

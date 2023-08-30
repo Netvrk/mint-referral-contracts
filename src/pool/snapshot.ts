@@ -29,7 +29,7 @@ export async function generateSnapshot(recent: boolean = true, filename: string 
 
   const users = await getUsersFromMainnetPool(blockHeight);
 
-  console.log("Users", users.length);
+  console.log("Total Users", users.length);
   const batchSize = 50;
 
   const snapshotData: any = [];
@@ -54,7 +54,6 @@ export async function generateSnapshot(recent: boolean = true, filename: string 
             tokenIds: tokens.map((t) => t.tokenId),
           };
         }
-        console.log(`User: ${user} done`);
         return userData;
       })
     );
