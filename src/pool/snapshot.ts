@@ -27,7 +27,7 @@ export async function generateSnapshot(recent: boolean = true, filename: string 
 
   const blockHeight = await getClosestBlock(timestamp, "ethereum");
 
-  const users = await getUsersFromMainnetPool(blockHeight);
+  const users = (await getUsersFromMainnetPool(blockHeight)).slice(0, 100);
 
   console.log("Total Users", users.length);
   const batchSize = 50;
@@ -63,7 +63,7 @@ export async function generateSnapshot(recent: boolean = true, filename: string 
     }
 
     // sleep for 10 sec
-    console.log(`${x + batchUsers.length}/${users.length} items done`);
+    console.log(`${x + batchUsers.length}/${users.length} user's data fetched`);
     await new Promise((resolve) => setTimeout(resolve, 30000));
 
     // Push to snapshotData

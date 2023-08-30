@@ -31,6 +31,8 @@ async function snapshot() {
   if (!recordsData) {
     console.log("Generating new snapshot");
     recordsData = await generateSnapshot(false, dateToday);
+    console.log("Saving snapshot to S3");
+    await updateSnapshotToS3(recordsData);
   } else {
     console.log("Snapshot already exists");
   }
@@ -51,17 +53,12 @@ async function snapshot() {
   })();
 
   if (latestMerkleRoot !== recordsData.root) {
-    console.log(recordsData.root, timestamp);
+    console.log("Updating merkle root", recordsData.root);
+    console.log("Timestamp used", timestamp);
     const tx = await referralContract.updateMerkleRoot(timestamp, recordsData.root);
     console.log("Merkle root updated", tx.hash);
   } else {
     console.log("Merkle root is up to date");
-  }
-
-  // Update snapshot to S3
-  if (!recordsData) {
-    console.log("Saving snapshot to S3");
-    await updateSnapshotToS3(recordsData);
   }
 }
 
