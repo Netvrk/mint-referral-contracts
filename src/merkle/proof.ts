@@ -5,8 +5,7 @@ import * as path from "path";
 import { CsvFile } from "../utils/csv-file";
 import { getMerkleTree } from "./root";
 
-async function getProof(snapshotData: any, user: string, factor: number) {
-  const tree = getMerkleTree(snapshotData);
+export async function getProof(tree: any, user: string, factor: number) {
   const hexProof = tree.getHexProof(keccak256(ethers.utils.solidityPack(["address", "uint256"], [user, factor])));
   return hexProof;
 }
@@ -23,7 +22,10 @@ export async function getProofFromFile(user: string, factor: number, filename: s
     headers: ["user", "staked", "unstaked", "total", "factor"],
   });
   const records = await readCsvFile.read();
-  const proof = getProof(records, user, factor);
+
+  const tree = getMerkleTree(records);
+
+  const proof = getProof(tree, user, factor);
 
   return proof;
 }

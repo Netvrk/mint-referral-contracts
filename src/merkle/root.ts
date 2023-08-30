@@ -16,7 +16,7 @@ export function getMerkleTree(snapshotData: any) {
   return tree;
 }
 
-async function getMerkleRoot(snapshotData: any) {
+export async function getMerkleRoot(snapshotData: any) {
   const tree = getMerkleTree(snapshotData);
   const root = "0x" + tree.getRoot().toString("hex");
   return root;

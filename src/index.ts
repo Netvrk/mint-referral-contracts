@@ -1,7 +1,7 @@
-import { getMerkleRootFromFile } from "./merkle/root";
-import { updateSnapshotToS3 } from "./pool/db";
+import cron from "node-cron";
+import { readSnapshotFromS3, updateSnapshotToS3 } from "./pool/db";
 import { generateSnapshot } from "./pool/snapshot";
-
+import { referralContracts } from "./utils/contracts";
 async function main() {
   // const fileName = "2023-08-18";
 
@@ -14,15 +14,55 @@ async function main() {
   // const data = await readSnapshotFromS3(fileName);
   // console.log(data.length);
 
-  await snapshotCron();
+  await snapshot();
 }
 
-async function snapshotCron() {
-  const filename = new Date().toISOString().split("T")[0];
-  await generateSnapshot(false, filename);
-  const root = await getMerkleRootFromFile(filename);
-  console.log("Root Hash", root);
-  await updateSnapshotToS3(filename);
+async function cronJob() {
+  cron.schedule("0 0 * * *", async () => {
+    console.log("Running a job at 00:00");
+    await snapshot();
+  });
+}
+
+async function snapshot() {
+  const dateToday = new Date().toISOString().split("T")[0];
+
+  let recordsData = await readSnapshotFromS3(dateToday);
+  if (!recordsData) {
+    console.log("Generating new snapshot");
+    recordsData = await generateSnapshot(false, dateToday);
+  } else {
+    console.log("Snapshot already exists");
+  }
+
+  // Save Merkel root to smart contract
+
+  // Date to timestamp
+  const timestamp = Math.floor(new Date(dateToday).getTime() / 1000);
+
+  const referralContract = referralContracts["aa"];
+
+  const latestMerkleRoot = await (async function () {
+    try {
+      return await referralContract.getLatestMerkleRoot();
+    } catch (err) {
+      return null;
+    }
+  })();
+
+  if (latestMerkleRoot !== recordsData.root) {
+    console.log(recordsData.root, timestamp);
+    const tx = await referralContract.updateMerkleRoot(timestamp, recordsData.root);
+    console.log("Merkle root updated", tx.hash);
+  } else {
+    console.log("Merkle root is up to date");
+  }
+
+  // Update snapshot to S3
+  if (!recordsData) {
+    console.log("Saving snapshot to S3");
+    await updateSnapshotToS3(recordsData);
+  }
 }
 
 main().catch((err) => {

@@ -1,8 +1,6 @@
-import * as fs from "fs";
-import * as path from "path";
+import { getProof } from "../merkle/proof";
+import { getMerkleRoot, getMerkleTree } from "../merkle/root";
 import getClosestBlock from "../utils/block";
-import { CsvFile } from "../utils/csv-file";
-import { saveToFile } from "./saveToFile";
 import { getUserTokensFromMainnetPool, getUsersFromMainnetPool } from "./users";
 
 const mainnetPools = ["land", "transport", "avatar", "bonus"];
@@ -14,6 +12,7 @@ interface UserToken {
       unstaked: number;
       total: number;
       tokenIds: number[];
+      proof?: string[][] | null;
     };
   };
 }
@@ -23,38 +22,24 @@ export async function generateSnapshot(recent: boolean = true, filename: string 
     filename = new Date().toISOString().split("T")[0];
   }
 
-  let out = path.join(__dirname, `../../exports/snapshots/`);
-  if (!fs.existsSync(out)) {
-    fs.mkdirSync(out, { recursive: true });
-  }
-
-  out = path.join(out, `/${filename}.csv`);
-
-  if (fs.existsSync(out)) {
-    console.log("Snapshot already generated");
-    return;
-  }
-
-  const csvFile = new CsvFile({
-    path: out,
-    headers: ["user", "staked", "unstaked", "total", "factor"],
-  });
-
   // date to timestamp
   const timestamp = new Date(filename).getTime() / 1000;
 
   const blockHeight = await getClosestBlock(timestamp, "ethereum");
 
-  const users = await getUsersFromMainnetPool(blockHeight);
+  const users = (await getUsersFromMainnetPool(blockHeight)).slice(0, 100);
 
   console.log("Users", users.length);
   const batchSize = 50;
+
+  const snapshotData: any = [];
+
   for (let x = 0; x < users.length; x += batchSize) {
-    const result: UserToken = {};
+    const userRecords: UserToken = {};
 
     const batchUsers = users.slice(x, x + batchSize);
 
-    const res = await Promise.all(
+    const usersData = await Promise.all(
       batchUsers.map(async (user) => {
         const userData: any = {};
         for (let pool of mainnetPools) {
@@ -75,35 +60,47 @@ export async function generateSnapshot(recent: boolean = true, filename: string 
     );
 
     for (let i = 0; i < batchUsers.length; i++) {
-      result[batchUsers[i]] = res[i];
+      userRecords[batchUsers[i]] = usersData[i];
     }
 
     // sleep for 10 sec
     console.log(`${x + batchUsers.length}/${users.length} items done`);
     await new Promise((resolve) => setTimeout(resolve, 10000));
 
-    const snapshotData = [];
-
-    for (let user of Object.keys(result)) {
+    // Push to snapshotData
+    for (let user of Object.keys(userRecords)) {
       let total = 0;
       let staked = 0;
 
-      for (let pool of Object.keys(result[user])) {
-        total += result[user][pool].total;
-        staked += result[user][pool].staked;
+      for (let pool of Object.keys(userRecords[user])) {
+        total += userRecords[user][pool].total;
+        staked += userRecords[user][pool].staked;
       }
 
       snapshotData.push({
         user,
-        factor: staked / total || 0,
+        factor: parseInt((staked / total || 0) * 100 + ""),
         staked: staked,
         unstaked: total - staked,
         total: total,
       });
     }
-
-    await saveToFile(csvFile, snapshotData);
   }
 
-  console.log("Snapshot generated and saved to file");
+  // Update Proof for all users
+  const tree = getMerkleTree(snapshotData);
+  const snapshotDataWithProof = await Promise.all(
+    snapshotData.map(async (user: any) => {
+      user.proof = await getProof(tree, user.user, user.factor);
+      return user;
+    })
+  );
+
+  // Update Root and metadata
+  const root = (await getMerkleRoot(snapshotData)) || "";
+  return {
+    snapshot: filename,
+    root,
+    records: snapshotDataWithProof,
+  };
 }
