@@ -64,7 +64,7 @@ export async function generateSnapshot(recent: boolean = true, filename: string 
 
     // sleep for 10 sec
     console.log(`${x + batchUsers.length}/${users.length} items done`);
-    await new Promise((resolve) => setTimeout(resolve, 10000));
+    await new Promise((resolve) => setTimeout(resolve, 30000));
 
     // Push to snapshotData
     for (let user of Object.keys(userRecords)) {
