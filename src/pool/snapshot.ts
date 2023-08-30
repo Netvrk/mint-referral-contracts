@@ -18,9 +18,9 @@ interface UserToken {
   };
 }
 
-export async function generateSnapshot(recent: boolean = true, date: string = "") {
+export async function generateSnapshot(recent: boolean = true, filename: string = "") {
   if (recent) {
-    date = new Date().toISOString().split("T")[0];
+    filename = new Date().toISOString().split("T")[0];
   }
 
   let out = path.join(__dirname, `../../exports/snapshots/`);
@@ -28,7 +28,12 @@ export async function generateSnapshot(recent: boolean = true, date: string = ""
     fs.mkdirSync(out, { recursive: true });
   }
 
-  out = path.join(out, `/${date}.csv`);
+  out = path.join(out, `/${filename}.csv`);
+
+  if (fs.existsSync(out)) {
+    console.log("Snapshot already generated");
+    return;
+  }
 
   const csvFile = new CsvFile({
     path: out,
@@ -36,7 +41,7 @@ export async function generateSnapshot(recent: boolean = true, date: string = ""
   });
 
   // date to timestamp
-  const timestamp = new Date(date).getTime() / 1000;
+  const timestamp = new Date(filename).getTime() / 1000;
 
   const blockHeight = await getClosestBlock(timestamp, "ethereum");
 
