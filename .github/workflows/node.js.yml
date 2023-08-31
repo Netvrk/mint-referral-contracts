@@ -2,10 +2,7 @@ name: Referral Update
 
 on:
   schedule:
-    - cron: "0 ? * * *"
-  push:
-    branches:
-      - main
+    - cron: "0 * * * *"
 
 jobs:
   build:
