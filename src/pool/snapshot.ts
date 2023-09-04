@@ -27,7 +27,7 @@ export async function generateSnapshot(recent: boolean = true, filename: string 
 
   const blockHeight = await getClosestBlock(timestamp, "ethereum");
 
-  const users = (await getUsersFromMainnetPool(blockHeight)).slice(0, 100);
+  const users = (await getUsersFromMainnetPool(blockHeight)).slice(0, 200);
 
   console.log("Total Users", users.length);
   const batchSize = 50;
