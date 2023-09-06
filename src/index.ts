@@ -15,25 +15,23 @@ const readSnapshot = async (snapshotName: string) => {
     const recordsData = await readSnapshotFromS3(snapshotName);
     return recordsData;
   } catch (err) {
-    console.log("Error in snapshot read", err);
-    console.log("Retrying snapshot read after 1 minute");
-    await new Promise((resolve) => setTimeout(resolve, 60000));
-    await readSnapshot(snapshotName);
+    throw new Error("Error in snapshot update, " + err);
   }
 };
 
 // Step 2
-const snapshotGeneration = async (snapshotName: string) => {
+const snapshotGeneration = async (snapshotName: string, retry = 3) => {
   try {
     console.log("Generating new snapshot");
     const recordsData = await generateSnapshot(false, snapshotName);
     console.log("Snapshot generated");
     return recordsData;
   } catch (err) {
+    if (retry === 0) throw new Error("Error in snapshot generation, " + err);
     console.log("Error in snapshot generation", err);
-    console.log("Retrying snapshot generation after 1 minute");
+    console.log("Retrying snapshot generation after 1 minute", "Attempt", 4 - retry);
     await new Promise((resolve) => setTimeout(resolve, 60000));
-    await snapshotGeneration(snapshotName);
+    await snapshotGeneration(snapshotName, retry - 1);
   }
 };
 
@@ -42,15 +40,12 @@ const updateSnapshot = async (snapshotRecords: any) => {
   try {
     await updateSnapshotToS3(snapshotRecords);
   } catch (err) {
-    console.log("Error in snapshot update", err);
-    console.log("Retrying snapshot update after 1 minute");
-    await new Promise((resolve) => setTimeout(resolve, 60000));
-    await updateSnapshot(snapshotRecords);
+    throw new Error("Error in snapshot update, " + err);
   }
 };
 
 // Step 4
-const updateMerkleRoot = async (merkleRoot: string, snapshotName: string) => {
+const updateMerkleRoot = async (merkleRoot: string, snapshotName: string, retry = 3) => {
   try {
     // Date to timestamp
     const timestamp = Math.floor(new Date(snapshotName).getTime() / 1000);
@@ -76,25 +71,31 @@ const updateMerkleRoot = async (merkleRoot: string, snapshotName: string) => {
       console.log("Merkle root is up to date");
     }
   } catch (err) {
+    if (retry === 0) throw new Error("Error in merkle root update, " + err);
     console.log("Error in merkle root update", err);
-    console.log("Retrying merkle root update after 1 minute");
+    console.log("Retrying merkle root update after 1 minute", "Attempt", 4 - retry);
     await new Promise((resolve) => setTimeout(resolve, 60000));
-    await updateMerkleRoot(merkleRoot, snapshotName);
+    await updateMerkleRoot(merkleRoot, snapshotName, retry - 1);
   }
 };
 
 async function snapshot() {
-  const dateToday = new Date().toISOString().split("T")[0];
-  let recordsData = await readSnapshot(dateToday);
-  if (!recordsData) {
-    recordsData = await snapshotGeneration(dateToday);
-    await updateSnapshot(recordsData);
-  } else {
-    console.log("Snapshot already exists");
+  try {
+    const dateToday = new Date().toISOString().split("T")[0];
+    let recordsData = await readSnapshot(dateToday);
+    if (!recordsData) {
+      recordsData = await snapshotGeneration(dateToday);
+      await updateSnapshot(recordsData);
+    } else {
+      console.log("Snapshot already exists");
+    }
+    // Update merkle root
+    const merkleRoot = recordsData.root;
+    await updateMerkleRoot(merkleRoot, dateToday);
+  } catch (err) {
+    console.log(err);
+    process.exit(1);
   }
-  // Update merkle root
-  const merkleRoot = recordsData.root;
-  await updateMerkleRoot(merkleRoot, dateToday);
 }
 
 main();
