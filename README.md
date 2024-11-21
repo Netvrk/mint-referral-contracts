@@ -1,8 +1,8 @@
 # NFT Referral System
 
-This project implements a referral-based NFT minting system using Solidity smart contracts. The system allows users to mint NFTs by referring others, with dynamic pricing, referral revenue distribution, and access control.
+This project implements a referral-based NFT minting system using Solidity smart contracts, where users can mint NFTs by referring others and earn rewards based on a referral factor. It consists of three contracts: AaReferral, MrReferral, and RootReferral, each tailored for a specific NFT collection.
 
-When a user refers another user to mint an NFT, they receive certain rewards determined by a referral factor. The `AaReferral` contract uses a dynamic referral factor calculated off-chain and verifies it with a Merkle root tree. In contrast, the `MrReferral` and `RootReferral` contracts use predefined referral factors.
+The AaReferral contract uses a dynamic referral factor, calculated off-chain and verified with a Merkle root tree, offering flexibility. In contrast, the MrReferral and RootReferral contracts use predefined, fixed referral factors for simpler reward distribution.
 
 - **AaReferral**
 
