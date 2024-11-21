@@ -9,8 +9,6 @@ import "@openzeppelin/contracts/utils/Strings.sol";
 import "@openzeppelin/contracts/token/common/ERC2981.sol";
 import "@openzeppelin/contracts/interfaces/IERC2981.sol";
 
-import "hardhat/console.sol";
-
 contract MrNft is ERC2981, ERC721Enumerable, AccessControl {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;

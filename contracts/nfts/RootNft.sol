@@ -3,7 +3,6 @@ pragma solidity ^0.8.18;
 
 import {ERC721} from "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
-import "hardhat/console.sol";
 
 contract RootNft is AccessControl, ERC721 {
     mapping(uint256 => string) private _tokenURIs;
